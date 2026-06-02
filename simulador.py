@@ -1,9 +1,7 @@
 import math
-import random
 import datetime
 import numpy as np
 from typing import List, Optional
-
 
 
 ahora = datetime.datetime.now()
@@ -27,14 +25,14 @@ def exponencial_inversa(media: float = 7.0) -> float:
     return -media * math.log(u)
 
 def normal_distribucion(media: float, desv: float = 1.6) -> float:
-    u1 = gu();
-    u2 = gu();
+    
+    sum = 0
 
-    if u1 == 0:
-        u1 = 1e-10
-
-    z = math.sqrt(-2 * math.log(u1)) * math.cos(2 * math.pi * u2)
-    valor = media + desv * z
+    for i in range (1,13):
+        u = gu();
+        sum = sum + u    
+        
+    valor = desv * (sum - 6) + media
     
     return max(0.0, valor)
 
