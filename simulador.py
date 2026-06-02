@@ -109,15 +109,15 @@ def ejecutar_simulacion(
             
             if tipo == "Mouse":
                
-                T = uniforme(45,60)
+                T = exponencial_inversa(20)
 
-                ingreso = uniforme(6000, 12000)
+                ingreso = uniforme(5000, 8000)
             
             else:
 
-                T = exponencial_inversa(20)
+                T = uniforme(45,60)
                 
-                ingreso = uniforme(5000, 8000)
+                ingreso = uniforme(6000, 12000)
 
         ingreso_Total += ingreso
         tiempo_total += T
