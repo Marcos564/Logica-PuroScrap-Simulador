@@ -41,11 +41,11 @@ y devuelve la tabla comparativa de rentabilidad por número de empleados.
     """,
 )
 def simular(
-    cant_mouses: int = Query(
+    min_lote: int = Query(
         ..., ge=1, le=10_000,
         description="Cantidad de mouses a procesar (requerido, 1–10000)"
     ),
-    cant_teclados: int = Query(
+    max_lote: int = Query(
         ..., ge=1, le=10_000,
         description="Cantidad de teclados a procesar (requerido, 1–10000)"
     ),
@@ -79,8 +79,8 @@ def simular(
 
     # Llamada al simulador con el nuevo nombre de parámetro
     resultado = ejecutar_simulacion(
-        cant_mouses      = cant_mouses,
-        cant_teclados    = cant_teclados,
+        min_lote     = min_lote,
+        max_lote         = max_lote,
         costo_hora       = costo_hora,
         horas_jornada    = horas_jornada,
         costo_por_unidad = costo_por_unidad, 
