@@ -5,7 +5,8 @@ from typing import List, Optional
 
 
 ahora = datetime.datetime.now()
-n0 = (ahora.hour * 3600) + (ahora.minute * 60) + ahora.second
+n0 = (ahora.hour * 3600 * 1000000) + (ahora.minute * 60 * 1000000) + (ahora.second * 1000000) + ahora.microsecond
+n0 = n0 % (2**32)
 
 def gu() -> float:
     global n0  # Le dice a la función que use y actualice el 'n0' de arriba
@@ -65,8 +66,8 @@ def desensamblar(tipo: str):
     return ingreso, masa_peligrosa, masa_reutilizable
 
 def ejecutar_simulacion(
-    cant_mouses:       int,
-    cant_teclados:     int,
+    min_lote:       int,
+    max_lote:     int,
     costo_hora:        float, 
     horas_jornada:     int,
     costo_por_unidad:  float, 
@@ -74,124 +75,192 @@ def ejecutar_simulacion(
     max_empleados:     int,
 ) -> dict:
 
+     # ── 1. Generación del lote ─────────────────────────
 
-    cantidad_P      = cant_mouses + cant_teclados
-    tipo            = "Mouse"
-    tiempo_total    = 0.0
-    ingreso_Total   = 0.0
-    reciclados = reutilizados = 0
-    piezas_recicladas = piezas_reutilizadas = piezas_desechadas = 0
+    lote = round(uniforme(min_lote, max_lote))
+
+    cant_mouses = 0
+    cant_teclados = 0
+
+    for _ in range(lote):
+
+        if gu() <= 0.60:
+            cant_teclados += 1
+        else:
+            cant_mouses += 1
+
+    # ── 2. Acumuladores ────────────────────────────────
+
+    tiempo_total = 0.0
+    ingreso_total = 0.0
+
+    reciclados = 0
+    reutilizados = 0
+    Cant_Mouses_Reutilizados = 0
+    Cant_Teclados_Reutilizados = 0
+    Cant_Teclados_Reciclados = 0
+    Cant_Mouses_Reciclados = 0
+
     total_residuo_peligroso = 0.0
     total_reutilizable = 0.0
 
-    i = 0
-    while i < cantidad_P:
+
+     # ── 3. Procesamiento de mouses ─────────────────────
+
+    for _ in range(cant_mouses):
 
         u = gu()
-        
-        if u <= 0.75:
 
-            ingreso, masa_pel, masa_reut = desensamblar(tipo) 
-        
+        # 75% reciclaje
+        if u <= 0.75:
+            Cant_Mouses_Reciclados += 1
+
+            ingreso, masa_pel, masa_reut = desensamblar("Mouse")
+
             total_residuo_peligroso += masa_pel
             total_reutilizable += masa_reut
-            
-            
+
             T = uniforme(5, 10)
-            
+
             reciclados += 1
-            
+
+        # 25% reutilización
         else:
 
-            reutilizados += 1
-            
-            if tipo == "Mouse":
-               
-                T = exponencial_inversa(20)
+            Cant_Mouses_Reutilizados += 1
 
-                ingreso = uniforme(5000, 8000)
-            
-            else:
+            T = exponencial_inversa(20)
 
-                T = uniforme(45,60)
-                
-                ingreso = uniforme(6000, 12000)
+            ingreso = uniforme(5000, 8000)
 
-        ingreso_Total += ingreso
+        ingreso_total += ingreso
         tiempo_total += T
-    
-        if i + 1 == cant_mouses:
-            tipo = "Teclado"
-        
-        i += 1
-   
 
-    
+ # ── 4. Procesamiento de teclados ───────────────────
+
+    for _ in range(cant_teclados):
+
+        u = gu()
+
+        # 75% reciclaje
+        if u <= 0.75:
+
+            ingreso, masa_pel, masa_reut = desensamblar("Teclado")
+
+            total_residuo_peligroso += masa_pel
+            total_reutilizable += masa_reut
+
+            T = uniforme(10, 20)
+
+            Cant_Teclados_Reciclados += 1
+
+        # 25% reutilización
+        else:
+
+            Cant_Teclados_Reutilizados += 1
+
+            T = uniforme(45, 60)
+
+            ingreso = uniforme(6000, 12000)
+
+        ingreso_total += ingreso
+        tiempo_total += T
+
+    # ── 5. Evaluación de escenarios ────────────────────
+
     escenarios = []
 
     for n in range(min_empleados, max_empleados + 1):
-        
-        TU = tiempo_total 
+
+        TU = tiempo_total
         dias = 0
-        unidades_restantes = cantidad_P
-        CostoAlmacenamiento = 0.0
+        unidades_restantes = lote
+        costo_almacenamiento = 0.0
 
         while TU > 0:
+
             dias += 1
             j = 1
             tiempo_trabajado_hoy = 0.0
-        
 
             while j <= n and TU > 0:
-                tiempo = normal_distribucion(420.0, 60.0) 
-                # Evitamos que el operario trabaje más tiempo del que queda en el lote
+
+                tiempo = normal_distribucion(420.0, 60.0)
+
                 if tiempo > TU:
                     tiempo = TU
 
-                TU = TU - tiempo
+                TU -= tiempo
                 tiempo_trabajado_hoy += tiempo
+
                 j += 1
 
-
-            # 1. Calculamos la proporción del lote que se terminó hoy
             proporcion_hoy = tiempo_trabajado_hoy / tiempo_total
-            unidades_procesadas_hoy = proporcion_hoy * cantidad_P
-            
-            # 2. Descontamos las unidades procesadas del inventario total
+            unidades_procesadas_hoy = proporcion_hoy * lote
+
             unidades_restantes -= unidades_procesadas_hoy
-            
-            # Limpiamos posibles decimales negativos de Python
             unidades_restantes = max(0.0, unidades_restantes)
 
-            # 3. Si el lote no se terminó (TU > 0), las unidades sobrantes pasan la noche
             if TU > 0:
-                CostoAlmacenamiento += unidades_restantes * costo_por_unidad
+                costo_almacenamiento += (
+                    unidades_restantes * costo_por_unidad
+                )
 
-        CostoLaboral = n * dias * horas_jornada * costo_hora
-        CostoTot = CostoLaboral + CostoAlmacenamiento
-        Rentabilidad = ingreso_Total - CostoTot
+        costo_laboral = (
+            n *
+            dias *
+            horas_jornada *
+            costo_hora
+        )
+
+        costo_total = (
+            costo_laboral +
+            costo_almacenamiento
+        )
+
+        rentabilidad = ingreso_total - costo_total
 
         escenarios.append({
             "n_empleados": n,
             "dias_requeridos": dias,
-            "costo_laboral": round(CostoLaboral, 2),
-            "costo_almacenamiento": round(CostoAlmacenamiento, 2),
-            "costo_total": round(CostoTot, 2),
-            "rentabilidad": round(Rentabilidad, 2)
+            "costo_laboral": round(costo_laboral, 2),
+            "costo_almacenamiento": round(costo_almacenamiento, 2),
+            "costo_total": round(costo_total, 2),
+            "rentabilidad": round(rentabilidad, 2)
         })
 
-    optimo = max(escenarios, key=lambda esc: esc["rentabilidad"])
+    # ── 6. Escenario óptimo ────────────────────────────
+
+    optimo = max(
+        escenarios,
+        key=lambda esc: esc["rentabilidad"]
+    )
+
+    # ── 7. Resultado ───────────────────────────────────
 
     return {
         "Datos_Generales": {
-            "Total_Perifericos": cantidad_P,
-            "Ingreso_Bruto_USD": round(ingreso_Total, 2),
+            "Total_Perifericos": lote,
+            "Cantidad_Mouses": cant_mouses,
+            "Cantidad_Teclados": cant_teclados,
+            "Ingreso_Bruto_USD": round(ingreso_total, 2),
             "Tiempo_Total_Horas": round(tiempo_total / 60, 2),
             "Material_Reutilizable_gr": round(total_reutilizable, 2),
             "Residuo_Peligroso_gr": round(total_residuo_peligroso, 2),
-            "Perifericos_Reciclados": reciclados,
-            "Perifericos_Reutilizados": reutilizados,
+            "Cant_Mouses_Reciclados": Cant_Mouses_Reciclados,
+            "Cant_Teclados_Reciclados": Cant_Teclados_Reciclados,
+            "Cant_Mouses_Reutilizados": Cant_Mouses_Reutilizados,
+            "Cant_Teclados_Reutilizados": Cant_Teclados_Reutilizados,
+            "Perifericos_Reutilizados": Cant_Mouses_Reutilizados + Cant_Teclados_Reutilizados,
+            "Perifericos_Reciclados": Cant_Mouses_Reciclados + Cant_Teclados_Reciclados,
+            "Lote": lote,
+            "Cant_Teclados": cant_teclados,
+            "Cant_Mouses": cant_mouses
         },
         "Recomendacion_Optima": optimo,
         "Todos_Los_Escenarios": escenarios
     }
+   
+
+    
+   
