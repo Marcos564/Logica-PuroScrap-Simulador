@@ -176,6 +176,7 @@ def ejecutar_simulacion(
         dias = 0
         unidades_restantes = lote
         costo_almacenamiento = 0.0
+        tiempo_laboral_real = 0.0
 
         while TU > 0:
 
@@ -195,6 +196,7 @@ def ejecutar_simulacion(
 
                 j += 1
 
+            tiempo_laboral_real += tiempo_trabajado_hoy
             proporcion_hoy = tiempo_trabajado_hoy / tiempo_total
             unidades_procesadas_hoy = proporcion_hoy * lote
 
@@ -206,12 +208,7 @@ def ejecutar_simulacion(
                     unidades_restantes * costo_por_unidad
                 )
 
-        costo_laboral = (
-            n *
-            dias *
-            horas_jornada *
-            costo_hora
-        )
+        costo_laboral = (tiempo_laboral_real / 60) * costo_hora
 
         costo_total = (
             costo_laboral +
