@@ -14,7 +14,7 @@ def gu() -> float:
     a = 1664525
     c = 1013904223
     m = 2**32
-    digitos = 5
+    digitos = 15
     
     n0 = (a * n0 + c) % m
     
