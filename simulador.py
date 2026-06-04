@@ -27,13 +27,13 @@ def exponencial_inversa(media: float = 7.0) -> float:
 
 def normal_distribucion(media: float, desv: float = 1.6) -> float:
     
-    sum = 0
+    suma = 0
 
     for i in range (1,13):
         u = gu();
-        sum = sum + u    
+        suma = suma + u    
         
-    valor = desv * (sum - 6) + media
+    valor = desv * (suma - 6) + media
     
     return max(0.0, valor)
 
