@@ -189,7 +189,7 @@ def ejecutar_simulacion(
 
                 tiempo = normal_distribucion(420.0, 60.0)
 
-                horas_pagadas_totales += (tiempo_disponible / 60.0)
+                horas_pagadas_totales += (tiempo / 60.0)
                 
                 if tiempo > TU:
                     tiempo = TU
