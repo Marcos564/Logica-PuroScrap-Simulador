@@ -188,6 +188,8 @@ def ejecutar_simulacion(
 
                 tiempo = normal_distribucion(420.0, 60.0)
 
+                horas_pagadas_totales += (tiempo_disponible / 60.0)
+                
                 if tiempo > TU:
                     tiempo = TU
 
@@ -196,7 +198,7 @@ def ejecutar_simulacion(
 
                 j += 1
 
-            tiempo_laboral_real += tiempo_trabajado_hoy
+            tiempo_laboral_real += tiempo_trabajado_hoy/ tiempo_total
             proporcion_hoy = tiempo_trabajado_hoy / tiempo_total
             unidades_procesadas_hoy = proporcion_hoy * lote
 
@@ -208,7 +210,8 @@ def ejecutar_simulacion(
                     unidades_restantes * costo_por_unidad
                 )
 
-        costo_laboral = (tiempo_laboral_real / 60) * costo_hora
+        #costo_laboral = (tiempo_laboral_real / 60) * costo_hora
+        costo_laboral = horas_pagadas_totales * costo_hora
 
         costo_total = (
             costo_laboral +
