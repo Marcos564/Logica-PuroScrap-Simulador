@@ -177,6 +177,7 @@ def ejecutar_simulacion(
         unidades_restantes = lote
         costo_almacenamiento = 0.0
         tiempo_laboral_real = 0.0
+        horas_pagadas_totales = 0.0
 
         while TU > 0:
 
